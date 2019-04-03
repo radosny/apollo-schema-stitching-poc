@@ -1,5 +1,6 @@
 const { ApolloServer } = require('apollo-server');
 const fetch = require('node-fetch');
+const axios = require('axios');
 const { HttpLink } = require('apollo-link-http');
 const {
     introspectSchema,
@@ -41,7 +42,18 @@ const breweryLink = new HttpLink({ uri: 'http://localhost:3040/', fetch });
     ]);
 
     const schema = mergeSchemas({
-        schemas: [beerSchema, transformedBrewerySchema]
+        schemas: [beerSchema, transformedBrewerySchema],
+        resolvers: {
+            Query: {
+                beers: async (parent, args) => {
+                    const { data } = await axios(
+                        `https://api.punkapi.com/v2/beers?beer_name=choc&page=1&per_page=${args.limit ||
+                            3}`
+                    );
+                    return data;
+                }
+            }
+        }
     });
 
     const server = new ApolloServer({
